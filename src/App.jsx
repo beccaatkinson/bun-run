@@ -359,7 +359,11 @@ Return ONLY valid JSON:
           <div style={s.loadingWrap}>
             <div style={s.spinner}/>
             <p style={s.loadingTitle}>Plotting your route</p>
-            <p style={s.loadingBody}>Scanning local bakeries near {startLocation}…</p>
+            <div style={s.loadingSummary}>
+              <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>From</span><span style={s.loadingSummaryVal}>{startLocation}</span></div>
+              <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Distance</span><span style={s.loadingSummaryVal}>{miles} mi</span></div>
+              {treat.length > 0 && <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Craving</span><span style={s.loadingSummaryVal}>{treat.join(", ")}</span></div>}
+            </div>
           </div>
         )}
 
@@ -490,6 +494,10 @@ const s = {
   spinner: { width: "44px", height: "44px", border: "3px solid #E0D5C5", borderTop: "3px solid #B85C38", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
   loadingTitle: { fontSize: "18px", fontWeight: 700, color: "#2C1A0E", letterSpacing: "-0.2px", fontFamily: "'Fraunces', serif" },
   loadingBody: { fontSize: "14px", color: "#8C7B6B", textAlign: "center" },
+  loadingSummary: { background: "#F0E9DF", borderRadius: "10px", padding: "12px 16px", display: "flex", flexDirection: "column", gap: "6px", width: "100%" },
+  loadingSummaryRow: { display: "flex", justifyContent: "space-between", gap: "16px" },
+  loadingSummaryLabel: { fontSize: "12px", color: "#8C7B6B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" },
+  loadingSummaryVal: { fontSize: "13px", color: "#2C1A0E", fontWeight: 600, textAlign: "right" },
 
   resultsWrap: { display: "flex", flexDirection: "column", gap: "12px", animation: "fadeUp 0.35s ease both" },
 
