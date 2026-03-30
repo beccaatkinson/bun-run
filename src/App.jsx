@@ -10,8 +10,8 @@ function RouteCard({ result, miles, treat, onShare }) {
       {/* Route strip */}
       <div style={s.routeStrip}>
         <div style={s.routeStat}>
-          <span style={s.routeStatVal}>{miles}</span>
-          <span style={s.routeStatLabel}>MILES</span>
+          <span style={s.routeStatVal}>{miles?.label || miles}</span>
+          <span style={s.routeStatLabel}>MI RANGE</span>
         </div>
         <div style={s.routeDivider}/>
         <div style={s.routeStatMain}>
@@ -51,7 +51,7 @@ function RouteCard({ result, miles, treat, onShare }) {
                   <div style={s.waypointDot}>
                     <div style={s.waypointLine}/>
                     <div style={s.waypointCircle}>{i + 1}</div>
-                    {i < result.waypoints.length - 1 && <div style={s.waypointLine}/>}
+                    <div style={s.waypointLineBottom}/>
                   </div>
                   <div style={s.waypointText}>
                     <span style={s.waypointName}>{wp.name}</span>
@@ -117,7 +117,7 @@ function RouteCard({ result, miles, treat, onShare }) {
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [step, setStep] = useState("intro");
-  const [miles, setMiles] = useState("");
+  const [miles, setMiles] = useState(null);
   const [startLocation, setStartLocation] = useState("");
   const [treat, setTreat] = useState([]);
   const [results, setResults] = useState([]);
@@ -164,15 +164,15 @@ export default function App() {
 
 Tone: Direct, warm, knowledgeable about food. No fluff, no emojis in text fields, no cheesy fitness clichés.
 
-A runner wants to run ${miles} miles starting from: ${startLocation}
+A runner wants to run ${miles.label} starting from: ${startLocation}
 ${treatLine}
 ${avoidLine}
 
 Return 3 different bakery recommendations. For each:
-1. ONE specific, well-regarded bakery roughly ${Math.max(0.5, parseFloat(miles) * 0.7).toFixed(1)}–${(parseFloat(miles) * 1.0).toFixed(1)} miles away on foot. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid tourist traps and chains.
+1. ONE specific, well-regarded bakery roughly ${miles.min}–${miles.max} miles away on foot. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid tourist traps and chains.
 2. 3 menu items. If a treat was requested, it MUST be first.
 3. One-sentence route description.
-4. Google Maps walking URL with 2 waypoints.
+4. Google Maps walking URL with 2 waypoints that keeps the total route within ${miles.min}–${miles.max} miles.
 5. A 2-sentence press snippet about the bakery.
 6. The bakery's latitude and longitude as numbers.
 
@@ -223,7 +223,7 @@ Return ONLY valid JSON:
 
   function reset() {
     setStep("intro");
-    setMiles("");
+    setMiles(null);
     setStartLocation("");
     setTreat([]);
     setResults([]);
@@ -272,21 +272,19 @@ Return ONLY valid JSON:
               {[0,1,2].map(i => <div key={i} style={{...s.dot, ...(i === 0 ? s.dotActive : {})}}/>)}
             </div>
             <label style={s.question}>How far today?</label>
-            <div style={s.milesInputWrap}>
-              <input
-                ref={inputRef}
-                type="number" min="0.5" max="26" step="0.5"
-                value={miles}
-                onChange={e => setMiles(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && miles) setStep("q2"); }}
-                placeholder="0"
-                style={s.milesInput}
-              />
-              <span style={s.milesUnit}>mi</span>
-            </div>
-            <div style={s.quickPicks}>
-              {["2","3","4","5","6","8"].map(m => (
-                <button key={m} style={s.quickPill} onClick={() => { setMiles(m); setTimeout(() => setStep("q2"), 120); }}>{m}</button>
+            <div style={s.rangePills}>
+              {[
+                { label: "0–2 mi", min: 0.5, max: 2 },
+                { label: "2–4 mi", min: 2, max: 4 },
+                { label: "3–5 mi", min: 3, max: 5 },
+                { label: "4–6 mi", min: 4, max: 6 },
+                { label: "6–8 mi", min: 6, max: 8 },
+              ].map(r => (
+                <button key={r.label}
+                  style={{...s.rangePill, ...(miles?.label === r.label ? s.rangePillSelected : {})}}
+                  onClick={() => { setMiles(r); setTimeout(() => setStep("q2"), 120); }}>
+                  {r.label}
+                </button>
               ))}
             </div>
             <button style={{...s.btnPrimary, opacity: miles ? 1 : 0.4}} onClick={() => { if (miles) setStep("q2"); }}>
@@ -361,7 +359,7 @@ Return ONLY valid JSON:
             <p style={s.loadingTitle}>Plotting your route</p>
             <div style={s.loadingSummary}>
               <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>From</span><span style={s.loadingSummaryVal}>{startLocation}</span></div>
-              <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Distance</span><span style={s.loadingSummaryVal}>{miles} mi</span></div>
+              <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Distance</span><span style={s.loadingSummaryVal}>{miles?.label}</span></div>
               {treat.length > 0 && <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Craving</span><span style={s.loadingSummaryVal}>{treat.join(", ")}</span></div>}
             </div>
           </div>
@@ -475,8 +473,9 @@ const s = {
   milesInput: { fontSize: "64px", fontWeight: 900, color: "#2C1A0E", background: "none", border: "none", borderBottom: "2px solid #E0D5C5", width: "130px", fontFamily: "'Inter', sans-serif", letterSpacing: "-3px", padding: "0", transition: "border-color 0.2s" },
   milesUnit: { fontSize: "24px", fontWeight: 700, color: "#C4B09A", letterSpacing: "-1px" },
 
-  quickPicks: { display: "flex", gap: "8px", flexWrap: "wrap" },
-  quickPill: { background: "#EDE3D8", border: "1px solid #E0D5C5", borderRadius: "8px", padding: "8px 16px", fontSize: "14px", fontWeight: 600, color: "#5C4A3A", cursor: "pointer", fontFamily: "'Inter', sans-serif" },
+  rangePills: { display: "flex", gap: "8px", flexWrap: "wrap" },
+  rangePill: { background: "#EDE3D8", border: "1.5px solid #E0D5C5", borderRadius: "99px", padding: "10px 18px", fontSize: "14px", fontWeight: 600, color: "#5C4A3A", cursor: "pointer", fontFamily: "'Inter', sans-serif" },
+  rangePillSelected: { background: "#F5EAE3", border: "1.5px solid #B85C38", color: "#B85C38" },
 
   inputCol: { display: "flex", flexDirection: "column" },
   textInput: { width: "100%", padding: "13px 16px", borderRadius: "10px", border: "1.5px solid #E0D5C5", fontSize: "15px", color: "#2C1A0E", fontFamily: "'Inter', sans-serif", background: "#FAF6F0", transition: "border-color 0.2s" },
@@ -527,9 +526,10 @@ const s = {
   waypointsCard: { background: "#F5EFE6", padding: "16px 20px", borderTop: "1px solid #E0D5C5" },
   waypointsToggle: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", cursor: "pointer", width: "100%", padding: 0, fontFamily: "'Inter', sans-serif" },
   waypointsLabel: { color: "#8C7B6B", fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em" },
-  waypointRow: { display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "4px" },
-  waypointDot: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: "24px" },
-  waypointLine: { width: "1px", height: "10px", background: "#E0D5C5" },
+  waypointRow: { display: "flex", gap: "12px", alignItems: "flex-start" },
+  waypointDot: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: "24px", alignSelf: "stretch" },
+  waypointLine: { width: "1px", height: "10px", background: "#E0D5C5", flexShrink: 0 },
+  waypointLineBottom: { width: "1px", flex: 1, minHeight: "12px", background: "#E0D5C5" },
   waypointCircle: { width: "24px", height: "24px", borderRadius: "50%", border: "1.5px solid #C4B09A", background: "#FDFAF5", color: "#5C4A3A", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" },
   waypointText: { display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "12px", flex: 1 },
   waypointName: { color: "#2C1A0E", fontSize: "14px", fontWeight: 600 },
