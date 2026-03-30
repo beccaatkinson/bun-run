@@ -21,26 +21,18 @@ function RouteCard({ result, miles, treat, onShare }) {
       </div>
 
       {/* OSM map iframe */}
-      {result.lat && result.lng ? (
-        <a href={result.mapsUrl} target="_blank" rel="noopener noreferrer" style={s.mapLink}>
-          <div style={s.mapEmbed}>
-            <iframe
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${result.lng - 0.012},${result.lat - 0.008},${result.lng + 0.012},${result.lat + 0.008}&layer=mapnik&marker=${result.lat},${result.lng}`}
-              style={{width: "100%", height: "100%", border: "none", display: "block"}}
-              title={`Map of ${result.bakeryName}`}
-            />
-            <div style={s.mapOverlay}>
-              <span style={s.mapOpenLabel}>🗺 Open full route</span>
-            </div>
-          </div>
+      <div style={s.mapEmbed}>
+        {result.lat && result.lng && (
+          <iframe
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${result.lng - 0.012},${result.lat - 0.008},${result.lng + 0.012},${result.lat + 0.008}&layer=mapnik&marker=${result.lat},${result.lng}`}
+            style={{width: "100%", height: "100%", border: "none", display: "block"}}
+            title={`Map of ${result.bakeryName}`}
+          />
+        )}
+        <a href={result.mapsUrl} target="_blank" rel="noopener noreferrer" style={s.mapOverlay}>
+          <span style={s.mapOpenLabel}>🗺 Open full route</span>
         </a>
-      ) : (
-        <a href={result.mapsUrl} target="_blank" rel="noopener noreferrer" style={s.mapLink}>
-          <div style={{...s.mapEmbed, display: "flex", alignItems: "center", justifyContent: "center"}}>
-            <span style={{color: "#8C7B6B", fontSize: "13px"}}>🗺 Open route in Maps</span>
-          </div>
-        </a>
-      )}
+      </div>
 
       {/* Waypoints accordion */}
       {result.waypoints && result.waypoints.length > 0 && (
@@ -521,7 +513,7 @@ const s = {
 
   mapLink: { display: "block", textDecoration: "none", position: "relative" },
   mapEmbed: { width: "100%", height: "180px", position: "relative", background: "#D8E8D8", overflow: "hidden" },
-  mapOverlay: { position: "absolute", bottom: "10px", right: "10px", background: "#3D5A47", borderRadius: "8px", padding: "6px 12px", pointerEvents: "none" },
+  mapOverlay: { position: "absolute", bottom: "10px", right: "10px", background: "#3D5A47", borderRadius: "8px", padding: "6px 12px", textDecoration: "none", zIndex: 10 },
   mapOpenLabel: { color: "white", fontSize: "12px", fontWeight: 700 },
 
   waypointsCard: { background: "#F5EFE6", padding: "16px 20px", borderTop: "1px solid #E0D5C5" },
