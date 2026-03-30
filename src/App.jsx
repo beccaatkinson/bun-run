@@ -239,13 +239,13 @@ Return ONLY valid JSON:
   }
 
   const treats = [
-    { label: "croissant", emoji: "🥐" },
-    { label: "cinnamon roll", emoji: "🌀" },
-    { label: "sticky bun", emoji: "🍯" },
-    { label: "muffin", emoji: "🧁" },
-    { label: "cookie", emoji: "🍪" },
-    { label: "vegan", emoji: "🌱" },
-    { label: "gluten free", emoji: "🌾" },
+    { label: "croissant" },
+    { label: "cinnamon roll" },
+    { label: "sticky bun" },
+    { label: "muffin" },
+    { label: "cookie" },
+    { label: "donut" },
+    { label: "bagel" },
   ];
 
   return (
@@ -265,7 +265,7 @@ Return ONLY valid JSON:
         {step === "intro" && (
           <div style={s.section}>
             <p style={s.introText}>
-              Plot a run that ends somewhere worth the miles. Local bakeries, real routes, no tourist traps.
+              Be the orchestrator of your group runs. Make a route, discover a new bakery, send to friends. Flaky croissants, not plans.
             </p>
             <button style={s.btnPrimary} onClick={() => setStep("q1")}>
               BUILD MY ROUTE
@@ -340,7 +340,7 @@ Return ONLY valid JSON:
             <label style={s.question}>Any cravings? 🍩</label>
             <p style={s.questionSub}>{"Pick up to 3 — or skip and we'll choose."}</p>
             <div style={s.treatPills}>
-              {treats.map(({label, emoji}) => {
+              {treats.map(({label}) => {
                 const sel = treat.includes(label);
                 const maxed = treat.length >= 3 && !sel;
                 return (
