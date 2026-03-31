@@ -299,6 +299,7 @@ Return ONLY valid JSON:
             <div style={s.stepDots}>
               {[0,1,2].map(i => <div key={i} style={{...s.dot, ...(i <= 1 ? s.dotActive : {})}}/>)}
             </div>
+            <button style={s.backBtn} onClick={() => setStep("q1")}>← Back</button>
             <label style={s.question}>Starting from where?</label>
             <p style={s.questionSub}>A neighborhood, intersection, or landmark.</p>
             <div style={s.inputCol}>
@@ -327,6 +328,7 @@ Return ONLY valid JSON:
             <div style={s.stepDots}>
               {[0,1,2].map(i => <div key={i} style={{...s.dot, ...s.dotActive}}/>)}
             </div>
+            <button style={s.backBtn} onClick={() => setStep("q2")}>← Back</button>
             <label style={s.question}>Any cravings? 🍩</label>
             <p style={s.questionSub}>{"Pick up to 3 — or skip and we'll choose."}</p>
             <div style={s.treatPills}>
@@ -466,6 +468,7 @@ const s = {
   dot: { width: "6px", height: "6px", borderRadius: "3px", background: "#E0D5C5" },
   dotActive: { background: "#B85C38" },
 
+  backBtn: { background: "none", border: "none", color: "#8C7B6B", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", padding: "0", textAlign: "left", marginBottom: "-8px" },
   question: { display: "block", fontSize: "22px", fontWeight: 700, color: "#2C1A0E", letterSpacing: "-0.2px", fontFamily: "'Fraunces', serif" },
   questionSub: { fontSize: "13px", color: "#8C7B6B", marginTop: "-8px" },
 
