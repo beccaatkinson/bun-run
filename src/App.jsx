@@ -200,10 +200,10 @@ ${treatLine}
 ${avoidLine}
 
 Return 3 different bakery recommendations. For each:
-1. ONE specific, well-regarded bakery where the total walking route — including any waypoints — adds up to ${miles.min}–${miles.max} miles. The bakery itself should be roughly ${(miles.min * 0.7).toFixed(1)}–${(miles.max * 0.85).toFixed(1)} miles from the start so waypoint detours don't push the total over. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid national chains.
+1. ONE specific, well-regarded bakery where the total walking route adds up to ${miles.min}–${miles.max} miles. The bakery itself should be roughly ${(miles.min * 0.7).toFixed(1)}–${(miles.max * 0.85).toFixed(1)} miles from the start in a straight-line sense. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid national chains.
 2. 3 menu items. If a treat was requested, it MUST be first.
 3. One-sentence route description that mentions the approximate total distance.
-4. Google Maps walking URL with 2 waypoints. Before returning it, mentally verify the full walking path (start → waypoint 1 → waypoint 2 → bakery) totals ${miles.min}–${miles.max} miles.
+4. Google Maps walking URL with 2 waypoints. CRITICAL ROUTING RULES: (a) Each waypoint must be geographically between the start and the bakery — no backtracking, no switchbacks, no U-shapes. (b) If you plot start → WP1 → WP2 → bakery on a map, the path should move in a single general direction. (c) Waypoints should be landmarks or intersections that naturally fall along the most direct reasonable path. (d) Do NOT add waypoints just to increase mileage — only include them if they fall naturally on the route.
 5. A 2-sentence press snippet about the bakery.
 6. The bakery's latitude and longitude as numbers.
 
@@ -389,7 +389,7 @@ Return ONLY valid JSON:
         {step === "loading" && (
           <div style={s.loadingWrap}>
             <div style={s.spinner}/>
-            <p style={s.loadingTitle}>Plotting your route</p>
+            <p style={s.loadingTitle}>Getting that route baked</p>
             <div style={s.loadingSummary}>
               <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>From</span><span style={s.loadingSummaryVal}>{startLocation}</span></div>
               <div style={s.loadingSummaryRow}><span style={s.loadingSummaryLabel}>Distance</span><span style={s.loadingSummaryVal}>{miles?.label}</span></div>
