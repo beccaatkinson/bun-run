@@ -3,7 +3,14 @@ import { useState, useRef, useEffect } from "react";
 // ── Route Card ────────────────────────────────────────────────────────────────
 function RouteCard({ result, miles, treat, onShare }) {
   const [waypointsOpen, setWaypointsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(null);
   const items = result.menuItems || [result.menuItem];
+
+  function handleFeedback(type) {
+    setFeedbackSent(type);
+    setFeedbackOpen(false);
+  }
 
   return (
     <div style={s.routeCard}>
@@ -17,6 +24,30 @@ function RouteCard({ result, miles, treat, onShare }) {
         <div style={s.routeStatMain}>
           <span style={s.routeStatCity}>{result.bakeryNeighborhood}</span>
           <span style={s.routeStatDesc}>{result.routeDescription}</span>
+        </div>
+        <div style={{position: "relative", flexShrink: 0}}>
+          {feedbackSent ? (
+            <span style={s.feedbackThanks}>Thanks!</span>
+          ) : (
+            <button style={s.feedbackBtn} onClick={() => setFeedbackOpen(o => !o)} title="Report an issue">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                <line x1="4" y1="22" x2="4" y2="15"/>
+              </svg>
+            </button>
+          )}
+          {feedbackOpen && (
+            <div style={s.feedbackPopover}>
+              <p style={s.feedbackPopoverTitle}>Report an issue</p>
+              <button style={s.feedbackOption} onClick={() => handleFeedback("bad_route")}>
+                Bad route
+              </button>
+              <button style={s.feedbackOption} onClick={() => handleFeedback("closed")}>
+                Bakery is closed
+              </button>
+              <button style={s.feedbackCancel} onClick={() => setFeedbackOpen(false)}>Cancel</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -169,10 +200,10 @@ ${treatLine}
 ${avoidLine}
 
 Return 3 different bakery recommendations. For each:
-1. ONE specific, well-regarded bakery roughly ${miles.min}–${miles.max} miles away on foot. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid tourist traps and chains.
+1. ONE specific, well-regarded bakery where the total walking route — including any waypoints — adds up to ${miles.min}–${miles.max} miles. The bakery itself should be roughly ${(miles.min * 0.7).toFixed(1)}–${(miles.max * 0.85).toFixed(1)} miles from the start so waypoint detours don't push the total over. Prioritize independently owned spots written about by Eater, The Infatuation, NYT Dining, Bon Appétit, Serious Eats, or similar. Avoid national chains.
 2. 3 menu items. If a treat was requested, it MUST be first.
-3. One-sentence route description.
-4. Google Maps walking URL with 2 waypoints that keeps the total route within ${miles.min}–${miles.max} miles.
+3. One-sentence route description that mentions the approximate total distance.
+4. Google Maps walking URL with 2 waypoints. Before returning it, mentally verify the full walking path (start → waypoint 1 → waypoint 2 → bakery) totals ${miles.min}–${miles.max} miles.
 5. A 2-sentence press snippet about the bakery.
 6. The bakery's latitude and longitude as numbers.
 
@@ -556,6 +587,13 @@ const s = {
   orderComma: { color: "#8C7B6B" },
 
   shareBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "transparent", border: "1.5px solid #B85C38", color: "#B85C38", borderRadius: "8px", padding: "13px", fontSize: "13px", fontWeight: 800, letterSpacing: "0.08em", cursor: "pointer", fontFamily: "'Inter', sans-serif", width: "100%" },
+
+  feedbackBtn: { background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.8 },
+  feedbackThanks: { color: "rgba(255,255,255,0.75)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em" },
+  feedbackPopover: { position: "absolute", top: "calc(100% + 8px)", right: 0, background: "#FDFAF5", border: "1.5px solid #E0D5C5", borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "8px", minWidth: "170px", boxShadow: "0 8px 24px rgba(60,30,10,0.14)", zIndex: 20 },
+  feedbackPopoverTitle: { fontSize: "11px", fontWeight: 800, color: "#8C7B6B", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "2px" },
+  feedbackOption: { background: "#F0E9DF", border: "1.5px solid #E0D5C5", borderRadius: "8px", padding: "10px 12px", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "left" },
+  feedbackCancel: { background: "none", border: "none", fontSize: "12px", color: "#8C7B6B", cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "2px" },
 
   tryAnotherBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "#EDE3D8", border: "1px solid #E0D5C5", color: "#5C4A3A", borderRadius: "10px", padding: "14px", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", width: "100%" },
   resetBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "none", border: "1px solid #E0D5C5", color: "#8C7B6B", borderRadius: "10px", padding: "14px", fontSize: "13px", fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer", fontFamily: "'Inter', sans-serif", width: "100%", marginTop: "4px" },
