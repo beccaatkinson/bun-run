@@ -155,8 +155,13 @@ export default function App() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [currentCard, setCurrentCard] = useState(0);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [mapsLoaded, setMapsLoaded] = useState(false);
   const inputRef = useRef(null);
   const carouselRef = useRef(null);
+  const autocompleteService = useRef(null);
+  const debounceTimer = useRef(null);
 
   function handleCarouselScroll() {
     if (!carouselRef.current) return;
@@ -180,6 +185,50 @@ export default function App() {
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
   }, [step]);
+
+  useEffect(() => {
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!key) return;
+    if (window.google?.maps?.places) {
+      autocompleteService.current = new window.google.maps.places.AutocompleteService();
+      setMapsLoaded(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+    script.async = true;
+    script.onload = () => {
+      autocompleteService.current = new window.google.maps.places.AutocompleteService();
+      setMapsLoaded(true);
+    };
+    document.head.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    if (!mapsLoaded || !autocompleteService.current || !startLocation.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      autocompleteService.current.getPlacePredictions(
+        {
+          input: startLocation,
+          location: new window.google.maps.LatLng(40.7128, -74.006),
+          radius: 50000,
+        },
+        (predictions, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            setSuggestions(predictions);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+          }
+        }
+      );
+    }, 250);
+    return () => clearTimeout(debounceTimer.current);
+  }, [startLocation, mapsLoaded]);
 
   async function fetchRecommendation(existingResults = []) {
     setStep("loading");
@@ -218,7 +267,7 @@ Return ONLY valid JSON:
       "lng": 0.0,
       "menuItems": ["...", "...", "..."],
       "mapsUrl": "https://www.google.com/maps/dir/?api=1&origin=...&waypoints=...&destination=...&travelmode=walking",
-      "waypoints": [{"name": "...", "description": "..."}],
+      "waypoints": [{"name": "...", "description": "...", "lat": 0.0, "lng": 0.0}],
       "routeDescription": "...",
       "pressSnippet": "...",
       "pressSource": "..."
@@ -227,23 +276,20 @@ Return ONLY valid JSON:
 }`;
 
     try {
-      const response = await fetch("/api/anthropic", {
+      const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 3000,
           messages: [{ role: "user", content: prompt }],
+          startLocation,
+          milesMin: miles.min,
+          milesMax: miles.max,
         }),
       });
 
       const data = await response.json();
-      const text = data.content.map(b => b.type === "text" ? b.text : "").join("");
-      const clean = text.replace(/```json|```/g, "").trim();
-      const jsonMatch = clean.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON");
-      const parsed = JSON.parse(jsonMatch[0]);
-      const newBatch = parsed.recommendations.map(r => ({ ...r, startLocation }));
+      if (!data.recommendations) throw new Error("No recommendations");
+      const newBatch = data.recommendations.map(r => ({ ...r, startLocation }));
       setResults([...existingResults, ...newBatch]);
       setStep("result");
     } catch (err) {
@@ -334,15 +380,44 @@ Return ONLY valid JSON:
             <label style={s.question}>Starting from where?</label>
             <p style={s.questionSub}>A neighborhood, intersection, or landmark.</p>
             <div style={s.inputCol}>
-              <input
-                ref={inputRef}
-                type="text"
-                value={startLocation}
-                onChange={e => setStartLocation(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && startLocation.trim()) setStep("q3"); }}
-                placeholder="e.g. Grand Army Plaza, Brooklyn"
-                style={s.textInput}
-              />
+              <div style={{position: "relative"}}>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={startLocation}
+                  onChange={e => { setStartLocation(e.target.value); setShowSuggestions(true); }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && startLocation.trim()) { setShowSuggestions(false); setStep("q3"); }
+                    if (e.key === "Escape") setShowSuggestions(false);
+                  }}
+                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  placeholder="e.g. Grand Army Plaza, Brooklyn"
+                  style={s.textInput}
+                  autoComplete="off"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div style={s.suggestionsList}>
+                    {suggestions.map(s2 => (
+                      <button
+                        key={s2.place_id}
+                        style={s.suggestionItem}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setStartLocation(s2.description);
+                          setSuggestions([]);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        <span style={s.suggestionMain}>{s2.structured_formatting.main_text}</span>
+                        {s2.structured_formatting.secondary_text && (
+                          <span style={s.suggestionSec}>{s2.structured_formatting.secondary_text}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 style={{...s.btnPrimary, opacity: startLocation.trim() ? 1 : 0.4, marginTop: "10px"}}
                 onClick={() => { if (startLocation.trim()) setStep("q3"); }}
@@ -513,6 +588,10 @@ const s = {
 
   inputCol: { display: "flex", flexDirection: "column" },
   textInput: { width: "100%", padding: "13px 16px", borderRadius: "10px", border: "1.5px solid #E0D5C5", fontSize: "15px", color: "#2C1A0E", fontFamily: "'Inter', sans-serif", background: "#FAF6F0", transition: "border-color 0.2s" },
+  suggestionsList: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#FDFAF5", border: "1.5px solid #E0D5C5", borderRadius: "10px", boxShadow: "0 8px 24px rgba(60,30,10,0.12)", zIndex: 100, overflow: "hidden" },
+  suggestionItem: { display: "flex", flexDirection: "column", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid #F0E9DF", cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "left", width: "100%" },
+  suggestionMain: { fontSize: "14px", fontWeight: 600, color: "#2C1A0E" },
+  suggestionSec: { fontSize: "12px", color: "#8C7B6B", marginTop: "2px" },
 
   treatPills: { display: "flex", gap: "8px", flexWrap: "wrap" },
   treatPill: { display: "flex", alignItems: "center", gap: "5px", background: "#EDE3D8", border: "1.5px solid #E0D5C5", borderRadius: "99px", padding: "8px 14px", fontSize: "13px", fontWeight: 500, color: "#5C4A3A", cursor: "pointer", fontFamily: "'Inter', sans-serif" },
