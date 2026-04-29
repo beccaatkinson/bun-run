@@ -162,6 +162,7 @@ export default function App() {
   const carouselRef = useRef(null);
   const autocompleteService = useRef(null);
   const debounceTimer = useRef(null);
+  const justSelected = useRef(false);
 
   function handleCarouselScroll() {
     if (!carouselRef.current) return;
@@ -205,6 +206,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (justSelected.current) {
+      justSelected.current = false;
+      return;
+    }
     if (!mapsLoaded || !autocompleteService.current || !startLocation.trim()) {
       setSuggestions([]);
       return;
@@ -404,6 +409,7 @@ Return ONLY valid JSON:
                         style={s.suggestionItem}
                         onMouseDown={e => {
                           e.preventDefault();
+                          justSelected.current = true;
                           setStartLocation(s2.description);
                           setSuggestions([]);
                           setShowSuggestions(false);
