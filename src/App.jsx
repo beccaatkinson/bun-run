@@ -339,7 +339,7 @@ Return ONLY valid JSON:
         {step === "intro" && (
           <div style={s.section}>
             <p style={s.introText}>
-              Be the orchestrator of your group runs. Make a route, discover a new bakery, send to friends. Flaky croissants, not plans.
+              Build your perfect run route, end at a bakery, and share with your friends. We want our croissants to be flaky, not our plans.
             </p>
             <button style={s.btnPrimary} onClick={() => setStep("q1")}>
               BUILD MY ROUTE
