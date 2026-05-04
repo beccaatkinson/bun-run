@@ -407,7 +407,7 @@ Return ONLY valid JSON:
                       <button
                         key={s2.place_id}
                         style={s.suggestionItem}
-                        onMouseDown={e => {
+                        onPointerDown={e => {
                           e.preventDefault();
                           justSelected.current = true;
                           setStartLocation(s2.description);
